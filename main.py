@@ -19,6 +19,7 @@ def fd_plot(filename):
     # the figure that will contain the plot
     fig = Figure(figsize=(8, 6), dpi=100)
     ax = fig.subplots()
+    ax.hold(True)
     ax.set_facecolor("whitesmoke")
     ax.plot(channel_chunk_data, color='darkslategray')
     ax.set_title(("Signal: " + activeChannel.name), size=16, color="black")
@@ -38,6 +39,7 @@ def browse():
 
 
 def get_channels(filename):
+    listbox.delete(0,tk.END)
     global channellist
     global grouplist
     channellist = []
