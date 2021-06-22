@@ -16,17 +16,11 @@ def fd_plot(filename):
         for chunk in activeChannel.data_chunks():
             channel_chunk_data = chunk[:]
 
-    # the figure that will contain the plot
-    fig = Figure(figsize=(8, 6), dpi=100)
-    ax = fig.subplots()
-    ax.hold(True)
-    ax.set_facecolor("whitesmoke")
-    ax.plot(channel_chunk_data, color='darkslategray')
-    ax.set_title(("Signal: " + activeChannel.name), size=16, color="black")
-    ax.set_ylabel("Channel signal value", color="darkslategrey", size=14)
-    ax.set_xlabel("Sample number", color="darkslategrey", size=14)
-    ax.grid(color="silver", linestyle="--")
-    canvas = FigureCanvasTkAgg(fig, master=PlotFrame, )
+    # plottitle= plottitle + " " activeChannel.name
+    # ax.set_title(("Signal: " + plottitle), size=16, color="black")
+    ax.plot(channel_chunk_data, label=activeChannel.name)
+    ax.legend()
+    canvas = FigureCanvasTkAgg(fig, master=PlotFrame)
     canvas.draw()
     # placing the canvas on the Tkinter window
     canvas.get_tk_widget().grid(row=3, column=0)
@@ -39,7 +33,7 @@ def browse():
 
 
 def get_channels(filename):
-    listbox.delete(0,tk.END)
+    listbox.delete(0, tk.END)
     global channellist
     global grouplist
     channellist = []
@@ -67,20 +61,30 @@ def selectChannel(event):
     # print("Picked signal: " + picked)
 
 
+fig = Figure(figsize=(8, 6), dpi=100)
+ax = fig.subplots()
+ax.set_ylabel("Channel signal value", color="darkslategrey", size=14)
+ax.set_xlabel("Sample number", color="darkslategrey", size=14)
+ax.grid(color="silver", linestyle="--")
+ax.set_facecolor("whitesmoke")
+
 root = tk.Tk()
 # Main window settings
 root.title('TDMS Easy Viewer')
-root.geometry("1000x650")
+root.geometry("1000x700")
 root.resizable(False, False)
 
-FileInputFrame = Frame(root, bg='silver', width=1000, height=50, pady=3, bd=2)
+FileInputFrame = Frame(root, bg='silver', width=1000, height=50, pady=3, bd=0)
 FileInputFrame.grid(row=0, column=0, sticky="ew", columnspan=2)
 
-ChListFrame = Frame(root, bg='white', width=200, height=600, pady=3, bd=2)
-ChListFrame.grid(row=1, column=0, sticky="ns", rowspan=3)
+ChListFrame = Frame(root, bg='whitesmoke', width=200, height=700, pady=3, bd=0)
+ChListFrame.grid(row=1, column=0, sticky="ns", rowspan=2)
 
-PlotFrame = Frame(root, bg='white', width=800, height=600, pady=3, bd=2)
-PlotFrame.grid(row=1, column=1, sticky="ew")
+PlotFrame = Frame(root, bg='white', width=800, height=650, bd=0)
+PlotFrame.grid(row=2, column=1, sticky="ew")
+
+OptionsFrame = Frame(root, bg="whitesmoke", width=800, height=50, bd=0)
+OptionsFrame.grid(row=1, column=1, sticky="ew")
 
 FileInputLabel = Label(FileInputFrame, text="File path:", bg="silver", fg="black")
 FileInputLabel.pack(side="left")
@@ -91,12 +95,12 @@ browseButton.pack(side="right", padx=40)
 filepathEntry = tk.Entry(FileInputFrame, width=130)
 filepathEntry.pack(side="left", padx=10)
 
-loadButton = tk.Button(ChListFrame, text="load channel list", padx=30, pady=5,
+loadButton = tk.Button(ChListFrame, text="load channel list", height=2,
                        command=lambda: get_channels(filepathEntry.get()))
 loadButton.grid(row=0, column=0, columnspan=2, sticky="ew")
 
 c_var = tk.StringVar()
-listbox = tk.Listbox(ChListFrame, listvariable=c_var, height=33, width=35, selectmode='browse')
+listbox = tk.Listbox(ChListFrame, listvariable=c_var, width=35, selectmode='browse')
 listbox.bind('<<ListboxSelect>>', selectChannel)
 
 scrollbar = tk.Scrollbar(ChListFrame)
@@ -106,7 +110,7 @@ listbox.grid(row=1, column=1, sticky="ns")
 listbox.config(yscrollcommand=scrollbar.set)
 scrollbar.config(command=listbox.yview)
 
-plotButton = tk.Button(ChListFrame, text="plot data", padx=30, pady=5, command=lambda: fd_plot(filepathEntry.get()))
-plotButton.grid(row=2, column=0, columnspan=2, sticky="ew")
+plotButton = tk.Button(ChListFrame, text="plot data", height=2, command=lambda: fd_plot(filepathEntry.get()))
+plotButton.grid(row=2, column=0, columnspan=2, sticky="sew")
 
 root.mainloop()
