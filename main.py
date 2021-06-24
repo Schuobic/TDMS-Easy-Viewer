@@ -6,24 +6,26 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 from nptdms import TdmsFile
 
-#M. Zlobinski - Light TDMS viewer
-#Version 1.00
-#Version 1.10 - option to plot multiple lines on one plot
-#Version 1.11 - improved looks
 
-def fd_plot(filename,var1):
-    activeChannel = channellist[listbox.curselection()[0]]
-    activeGroup = grouplist[listbox.curselection()[0]]
+# M. Zlobinski - Light TDMS viewer
+# Version 1.00
+# Version 1.10 - option to plot multiple lines on one plot
+# Version 1.11 - improved looks
+
+def fd_plot(filename, clear_plot):
+    active_channel = channellist[listbox.curselection()[0]]
+    active_group = grouplist[listbox.curselection()[0]]
     with TdmsFile.open(filename) as tdms_file:
-        activeChannel = tdms_file[activeGroup][activeChannel]
-        for chunk in activeChannel.data_chunks():
+        active_channel = tdms_file[active_group][active_channel]
+        for chunk in active_channel.data_chunks():
             channel_chunk_data = chunk[:]
-    if (var1==0) and (ax.lines != None):
+    if (clear_plot == 0) and (ax.lines is not None):
         for i in range(len(ax.lines)):
             ax.lines[0].remove()
-    ax.plot(channel_chunk_data, label=activeChannel.name)
+    ax.plot(channel_chunk_data, label=active_channel.name)
     ax.legend()
     canvas.draw()
+
 
 def browse():
     filepathEntry.delete(0, tk.END)
@@ -49,16 +51,15 @@ def get_channels(filename):
                 channellist.append(channel.name)
                 grouplist.append(group.name)
                 c.append(channel.name)
-                i += 1
                 listbox.insert(i, channel.name)
+                i += 1
 
-
-def selectChannel(event):
-    widget = event.widget
-    selection = widget.curselection()
-    picked = widget.get(selection[0])
+def select_channel(event):
+    # widget = event.widget
+    # selection = widget.curselection()
+    # picked = widget.get(selection[0])
     # print("Picked signal: " + picked)
-
+    pass
 
 # Main window settings
 root = tk.Tk()
@@ -77,8 +78,7 @@ FileInputFrame.grid(row=0, column=0, sticky="ew", columnspan=2)
 OptionsFrame.grid(row=1, column=0, sticky="ew", columnspan=2)
 ChListFrame.grid(row=2, column=0, sticky="wns")
 PlotFrame.grid(row=2, column=1, sticky="e")
-FooterFrame.grid(row=3, column=0,columnspan=2, sticky="sew")
-
+FooterFrame.grid(row=3, column=0, columnspan=2, sticky="sew")
 
 # define elements - file input frame
 FileInputLabel = Label(FileInputFrame, text="File path:", bg="silver", fg="black")
@@ -102,9 +102,10 @@ keep_graph_cb.pack(side="left")
 c_var = tk.StringVar()
 loadButton = tk.Button(ChListFrame, text="load channel list", height=2,
                        command=lambda: get_channels(filepathEntry.get()))
-plotButton = tk.Button(ChListFrame, text="plot data", height=2, command=lambda: fd_plot(filepathEntry.get(),var1.get()))
+plotButton = tk.Button(ChListFrame, text="plot data", height=2,
+                       command=lambda: fd_plot(filepathEntry.get(), var1.get()))
 listbox = tk.Listbox(ChListFrame, listvariable=c_var, selectmode='browse', width=30, height=35)
-listbox.bind('<<ListboxSelect>>', selectChannel)
+listbox.bind('<<ListboxSelect>>', select_channel)
 scrollbar = tk.Scrollbar(ChListFrame)
 
 # distrubte elements in channel list frame
@@ -115,7 +116,7 @@ plotButton.grid(row=2, column=0, columnspan=2, sticky="sew")
 scrollbar.config(command=listbox.yview)
 listbox.config(yscrollcommand=scrollbar.set)
 
-#bottom
+# bottom
 FooterLabel = Label(FooterFrame, text="Version: 1.11", bg="grey", fg="black")
 FooterLabel.pack(side="left")
 
