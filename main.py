@@ -5,24 +5,38 @@ import tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 from nptdms import TdmsFile
+import numpy as np
 
 
 # M. Zlobinski - Light TDMS viewer
 # Version 1.00
 # Version 1.10 - option to plot multiple lines on one plot
 # Version 1.11 - improved looks
+# Version 1.20 - added custom x axis and statistical infos
 
-def fd_plot(filename, clear_plot):
-    active_channel = channellist[listbox.curselection()[0]]
-    active_group = grouplist[listbox.curselection()[0]]
+def fd_plot(filename, clear_plot, xminval, xmaxval):
+    global y_lim_min, y_lim_max
+    ch_num = int(ch_indexEntry.get())
+    active_channel = channellist[ch_num]
+    active_group = grouplist[ch_num]
+    print(xminval)
+    print(xmaxval)
     with TdmsFile.open(filename) as tdms_file:
         active_channel = tdms_file[active_group][active_channel]
         for chunk in active_channel.data_chunks():
-            channel_chunk_data = chunk[:]
+            if xmaxval == 0: xmaxval = int(len(active_channel))
+            data = chunk[xminval:xmaxval]
+    stat_info = f'min: {round(min(data), 3)} | max: {round(max(data), 3)} | avg: {round(np.average(data), 3)}'
+    statistic_infoLabel.configure(text=stat_info)
     if (clear_plot == 0) and (ax.lines is not None):
         for i in range(len(ax.lines)):
             ax.lines[0].remove()
-    ax.plot(channel_chunk_data, label=active_channel.name)
+    ax.set_xlim([xminval, xmaxval])
+
+    y_lim_min = min(data) - 0.2 * np.average(data)
+    y_lim_max = max(data) + 0.2 * np.average(data)
+    ax.set_ylim([y_lim_min, y_lim_max])
+    ax.plot(data, label=active_channel.name)
     ax.legend()
     canvas.draw()
 
@@ -54,12 +68,14 @@ def get_channels(filename):
                 listbox.insert(i, channel.name)
                 i += 1
 
+
 def select_channel(event):
-    # widget = event.widget
-    # selection = widget.curselection()
-    # picked = widget.get(selection[0])
-    # print("Picked signal: " + picked)
-    pass
+    ch_indexEntry.delete(0, tk.END)
+    widget = event.widget
+    selection = widget.curselection()
+    #picked = widget.get(selection[0]) get name
+    ch_indexEntry.insert(0, listbox.curselection()[0])
+
 
 # Main window settings
 root = tk.Tk()
@@ -86,26 +102,44 @@ browseButton = tk.Button(FileInputFrame, text="browse", padx=20, pady=2, command
 filepathEntry = tk.Entry(FileInputFrame, width=130)
 # distribute elements for file input frame
 FileInputLabel.pack(side="left")
-browseButton.pack(side="right", padx=40)
+browseButton.pack(side="right", padx=30)
 filepathEntry.pack(side="left", padx=10)
 
 # define elements - options frame
-OptionsLabel = Label(OptionsFrame, text="Plotting options:", bg="whitesmoke", fg="black")
+optionsLabel = Label(OptionsFrame, text="Plotting options:", bg="whitesmoke", fg="black")
 var1 = tk.IntVar()
 keep_graph_cb = tk.Checkbutton(OptionsFrame, text='Add Graph', variable=var1, onvalue=1, offvalue=0)
+statistic_infoLabel = Label(OptionsFrame, bg="whitesmoke", fg="black")
+optionsLabel2 = Label(OptionsFrame, text="|  x min ", bg="whitesmoke", fg="black")
+xminEntry = tk.Entry(OptionsFrame, width=8)
+xminEntry.insert(0, 0)
+optionsLabel3 = Label(OptionsFrame, text="x max: ", bg="whitesmoke", fg="black")
+xmaxEntry = tk.Entry(OptionsFrame, width=8)
+xmaxEntry.insert(0, 0)
 
 # distribute elements in options frame
-OptionsLabel.pack(side="left")
+optionsLabel.pack(side="left")
 keep_graph_cb.pack(side="left")
+optionsLabel2.pack(side="left")
+xminEntry.pack(side="left")
+optionsLabel3.pack(side="left")
+xmaxEntry.pack(side="left")
+statistic_infoLabel.pack(side="right", padx=30)
 
 # define elements - channel list frame
 c_var = tk.StringVar()
 loadButton = tk.Button(ChListFrame, text="load channel list", height=2,
                        command=lambda: get_channels(filepathEntry.get()))
 plotButton = tk.Button(ChListFrame, text="plot data", height=2,
-                       command=lambda: fd_plot(filepathEntry.get(), var1.get()))
-listbox = tk.Listbox(ChListFrame, listvariable=c_var, selectmode='browse', width=30, height=35)
-listbox.bind('<<ListboxSelect>>', select_channel)
+                       command=lambda: fd_plot(filepathEntry.get(),
+                                               var1.get(),
+                                               int(xminEntry.get()),
+                                               int(xmaxEntry.get())
+                                               )
+                       )
+listbox = tk.Listbox(ChListFrame, listvariable=c_var, selectmode='browse', width=30, height=35, exportselection=False)
+ch_indexEntry = tk.Entry(ChListFrame)
+listbox.bind("<<ListboxSelect>>", select_channel)
 scrollbar = tk.Scrollbar(ChListFrame)
 
 # distrubte elements in channel list frame
