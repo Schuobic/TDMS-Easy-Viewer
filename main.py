@@ -15,7 +15,6 @@ import numpy as np
 # Version 1.20 - added custom x axis and statistical infos
 
 def fd_plot(filename, clear_plot, xminval, xmaxval):
-    global y_lim_min, y_lim_max
     ch_num = int(ch_indexEntry.get())
     active_channel = channellist[ch_num]
     active_group = grouplist[ch_num]
@@ -24,17 +23,21 @@ def fd_plot(filename, clear_plot, xminval, xmaxval):
     with TdmsFile.open(filename) as tdms_file:
         active_channel = tdms_file[active_group][active_channel]
         for chunk in active_channel.data_chunks():
-            if xmaxval == 0: xmaxval = int(len(active_channel))
+            if xmaxval == 0:
+                xmaxval = int(len(active_channel))
             data = chunk[xminval:xmaxval]
     stat_info = f'min: {round(min(data), 3)} | max: {round(max(data), 3)} | avg: {round(np.average(data), 3)}'
     statistic_infoLabel.configure(text=stat_info)
     if (clear_plot == 0) and (ax.lines is not None):
         for i in range(len(ax.lines)):
             ax.lines[0].remove()
-    ax.set_xlim([xminval, xmaxval])
 
+    ax.set_xlim([xminval, xmaxval])
     y_lim_min = min(data) - 0.2 * np.average(data)
     y_lim_max = max(data) + 0.2 * np.average(data)
+    if y_lim_min == 0 and y_lim_max == 0:
+        y_lim_min = -1
+        y_lim_max = 1
     ax.set_ylim([y_lim_min, y_lim_max])
     ax.plot(data, label=active_channel.name)
     ax.legend()
@@ -48,34 +51,37 @@ def browse():
 
 
 def get_channels(filename):
-    listbox.delete(0, tk.END)
     global channellist
     global grouplist
+    listbox.delete(0, tk.END)
     channellist = []
     grouplist = []
-    c = []
     index = []
     i = 0
+    filter = filterEntry.get()
     with TdmsFile.open(filename) as tdms_file:  # read file but do not load
         groups = tdms_file.groups()
         for group in groups:
             channels = group.channels()
             for channel in channels:
-                index.append(i)
-                channellist.append(channel.name)
-                grouplist.append(group.name)
-                c.append(channel.name)
-                listbox.insert(i, channel.name)
-                i += 1
+
+                if (np.size(filter) == 0) or (filter in channel.name):
+                    index.append(i)
+                    channellist.append(channel.name)
+                    grouplist.append(group.name)
+                    listbox.insert(i, channel.name)
+                    i += 1
 
 
 def select_channel(event):
     ch_indexEntry.delete(0, tk.END)
-    widget = event.widget
-    selection = widget.curselection()
-    #picked = widget.get(selection[0]) get name
+    # widget = event.widget
+    # selection = widget.curselection()
+    # picked = widget.get(selection[0]) get name
     ch_indexEntry.insert(0, listbox.curselection()[0])
 
+def filter_applying(event):
+    get_channels(filepathEntry.get())
 
 # Main window settings
 root = tk.Tk()
@@ -89,7 +95,7 @@ OptionsFrame = Frame(root, bg="whitesmoke", height=50, borderwidth=0, highlightt
 ChListFrame = Frame(root, bg='whitesmoke', borderwidth=0, highlightthickness=0)
 PlotFrame = Frame(root, bg='white', borderwidth=0, highlightthickness=0)
 FooterFrame = Frame(root, bg='grey', borderwidth=0, highlightthickness=0)
-# Distribute
+# Distribute Frames
 FileInputFrame.grid(row=0, column=0, sticky="ew", columnspan=2)
 OptionsFrame.grid(row=1, column=0, sticky="ew", columnspan=2)
 ChListFrame.grid(row=2, column=0, sticky="wns")
@@ -130,6 +136,7 @@ statistic_infoLabel.pack(side="right", padx=30)
 c_var = tk.StringVar()
 loadButton = tk.Button(ChListFrame, text="load channel list", height=2,
                        command=lambda: get_channels(filepathEntry.get()))
+filterEntry = tk.Entry(ChListFrame)
 plotButton = tk.Button(ChListFrame, text="plot data", height=2,
                        command=lambda: fd_plot(filepathEntry.get(),
                                                var1.get(),
@@ -137,21 +144,22 @@ plotButton = tk.Button(ChListFrame, text="plot data", height=2,
                                                int(xmaxEntry.get())
                                                )
                        )
-listbox = tk.Listbox(ChListFrame, listvariable=c_var, selectmode='browse', width=30, height=35, exportselection=False)
+listbox = tk.Listbox(ChListFrame, listvariable=c_var, selectmode='browse', width=30, height=34, exportselection=False)
 ch_indexEntry = tk.Entry(ChListFrame)
 listbox.bind("<<ListboxSelect>>", select_channel)
 scrollbar = tk.Scrollbar(ChListFrame)
 
 # distrubte elements in channel list frame
 loadButton.grid(row=0, column=0, sticky="ew", columnspan=2)
-scrollbar.grid(row=1, column=0, sticky="nesw")
-listbox.grid(row=1, column=1, sticky="nesw")
-plotButton.grid(row=2, column=0, columnspan=2, sticky="sew")
+filterEntry.grid(row=1, column=0, sticky="ew", columnspan=2)
+scrollbar.grid(row=2, column=0, sticky="nesw")
+listbox.grid(row=2, column=1, sticky="nesw")
+plotButton.grid(row=3, column=0, columnspan=2, sticky="sew")
 scrollbar.config(command=listbox.yview)
 listbox.config(yscrollcommand=scrollbar.set)
-
+filterEntry.bind("<Key>", filter_applying)
 # bottom
-FooterLabel = Label(FooterFrame, text="Version: 1.11", bg="grey", fg="black")
+FooterLabel = Label(FooterFrame, text="Version: alpha 1.31", bg="grey", fg="black")
 FooterLabel.pack(side="left")
 
 # Predefine figure
