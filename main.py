@@ -31,6 +31,7 @@ def fd_plot(filename, clear_plot, xminval, xmaxval):
             if xmaxval == 0:
                 xmaxval = int(len(chunk))
             data = chunk[xminval:xmaxval]
+            xdata=np.arange(len(data)) + xminval
 
     stat_info = f'min: {round(min(data), 3)} | max: {round(max(data), 3)} | avg: {round(np.average(data), 3)}'
     statistic_infoLabel.configure(text=stat_info)
@@ -54,7 +55,7 @@ def fd_plot(filename, clear_plot, xminval, xmaxval):
             cur_stat_info = f'min: {cur_min} | max: {cur_max} | avg: {cur_avg}'
             cursor_infoLabel.configure(text=cur_stat_info)
             ax.vlines([curL, curR], y_lim_min, y_lim_max, color="grey", linestyle="dashed")
-    ax.plot(data, label=active_channel.name)
+    ax.plot(xdata, data, label=active_channel.name)
     ax.legend()
     canvas.draw()
 
