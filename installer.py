@@ -4,5 +4,6 @@ PyInstaller.__main__.run([
     'main.py',
     '--onedir',
     '--windowed',
-    '--noconsole'
+    '--noconsole',
+    '--icon=icon.ico'
 ])

@@ -43,9 +43,9 @@ def fd_plot(filename, clear_plot, xminval, xmaxval):
     y_lim_min = min(data) - 0.2 * np.average(data)
     y_lim_max = max(data) + 0.2 * np.average(data)
     if y_lim_min == 0 and y_lim_max == 0:
-        y_lim_min = -1
-        y_lim_max = 1
-    ax.set_ylim([y_lim_min, y_lim_max])
+      y_lim_min = -1
+      y_lim_max = 1
+    #ax.set_ylim([y_lim_min, y_lim_max])
     if curL > xminval and curR < xmaxval:
         if curL != curR:
             curData = data[curL:curR]
